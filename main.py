@@ -49,6 +49,7 @@ def main():
     identity = Identity(config["key_path"])
     peer = Peer(config, identity)
     peer.start_service()
+    peer.run_cli()
     #peer.run_cli()
     #peer.shutdown()
 

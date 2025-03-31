@@ -21,4 +21,31 @@ class Peer:
         self.broadcast.start_service()
         self.discovery.start_service()
 
+    def run_cli(self):  
+        while True:
+            try:
+                cmd = input(">>> ").strip()
+                if cmd == "exit":
+                    print("Exiting")
+                    break
+
+                elif cmd == "help":
+                    print("Commands:\n  list           List discovered peers\n  auth <peer>    Authenticate with a peer\n  exit           Quit")
+
+                elif cmd == "list":
+                    peers = self.discovery.get_peers()
+                    if not peers:
+                        print("No peers found.")
+                    for name, (ip, port) in peers.items():
+                        print(f"{name} @ {ip}:{port}")
+
+                elif cmd.startswith("auth "):
+                    print("not implemented")
+
+                else:
+                    print("Unknown command. Type 'help'.")
+
+            except KeyboardInterrupt:
+                print("\nInterrupted. Exiting")
+                break
         

@@ -37,7 +37,7 @@ class Discovery:
         time.sleep(self.discovery_timeout)
 
     def get_peers(self):
-        return self.listener.peers
+        return self.peer_listener.peers
 
     def stop(self):
         self.zeroconf.close()
