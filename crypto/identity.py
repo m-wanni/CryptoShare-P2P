@@ -10,6 +10,7 @@ class Identity:
                 self.private_key = serialization.load_pem_private_key(f.read(), password=None)
         else:
             self.private_key = Ed25519PrivateKey.generate()
+            os.makedirs(os.path.dirname(key_path), exist_ok=True)
             with open(key_path, "wb") as f:
                 f.write(self.private_key.private_bytes(
                     encoding=serialization.Encoding.PEM,

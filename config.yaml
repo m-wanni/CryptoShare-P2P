@@ -1,13 +1,12 @@
 # Identity
 peer_name: "peer_01"
-key_path: "data/keys/private_key.pem"
+key_path: "./data/keys/private_key.pem"
 
 # Network
-mdns_service_name: "_p2pfileshare._tcp.local."
-listen_port: 9999
+listen_port: 8888
 discovery_timeout: 5  # seconds
 
 # File Sharing
-shared_dir: "data/shared"
-download_dir: "data/downloads"
-metadata_cache: "data/metadata.json"
+shared_dir: "./data/shared"
+download_dir: "./data/downloads"
+metadata_cache: "./data/metadata.json"

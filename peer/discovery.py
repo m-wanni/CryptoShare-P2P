@@ -1,5 +1,6 @@
 from zeroconf import Zeroconf, ServiceBrowser, ServiceListener
 import socket
+import time 
 
 SERVICE_TYPE = "_p2pfileshare._tcp.local."
 
@@ -23,15 +24,17 @@ class DiscoveryListener(ServiceListener):
             print(f"Peer left: {peer_name}")
 
 class Discovery:
-    def __init__(self):
+    def __init__(self, discovery_timeout):
         self.zeroconf = Zeroconf()
         self.peer_listener = DiscoveryListener()
         self.browser = None
+        self.discovery_timeout = discovery_timeout
 
     def start_service(self):
         #watches local network for peers 
-        self.browser = ServiceBrowser(self.zeroconf, SERVICE_TYPE, self.peer_listener)
         print("Discovery started...")
+        self.browser = ServiceBrowser(self.zeroconf, SERVICE_TYPE, self.peer_listener)
+        time.sleep(self.discovery_timeout)
 
     def get_peers(self):
         return self.listener.peers

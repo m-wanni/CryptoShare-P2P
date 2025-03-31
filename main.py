@@ -11,7 +11,8 @@
 ├── peer/
 │   ├── __init__.py
 │   ├── peer.py                # Peer class: handles core logic
-│   ├── discovery.py           # mDNS discovery using zeroconf
+│   ├── discovery.py    # mDNS discovery using zeroconf
+│   ├── broadcast.py    # mDNS broadcast using zeroconf
 │   ├── file_store.py   # Manages shared/received files
 │   └── transfer.py            # Handles sending/receiving files
 │
@@ -37,20 +38,16 @@
 │   ├── __init__.py
 │   └── helpers.py             # Misc. functions (e.g., chunking, formatting)
 │
-├── tests/
-│   ├── __init__.py
-│   ├── test_crypto.py
-│   ├── test_peer.py
-│   └── test_transfer.py
 │
 '''
 
 from peer.peer import Peer
+from crypto.identity import Identity
 from config import load_config
 def main():
     config = load_config("config.yaml")
-
-    peer = Peer(config)
+    identity = Identity(config["key_path"])
+    peer = Peer(config, identity)
     peer.start_service()
     #peer.run_cli()
     #peer.shutdown()
