@@ -46,12 +46,9 @@ from crypto.identity import Identity
 from config import load_config
 def main():
     config = load_config("config.yaml")
-    identity = Identity(config["key_path"])
+    identity = Identity(config["key_path"], config["peer_name"])
     peer = Peer(config, identity)
     peer.start_service()
-    peer.run_cli()
-    #peer.run_cli()
-    #peer.shutdown()
 
 if __name__ == "__main__":
     main()

@@ -3,14 +3,14 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
 class Identity:
-    def __init__(self, key_path):
+    # Initializes a private-key public key pair for peer if it does not already exist.
+    def __init__(self, key_path, peer_name):
         self.private_key = None
         if os.path.exists(key_path):
             with open(key_path, "rb") as f:
                 self.private_key = serialization.load_pem_private_key(f.read(), password=None)
         else:
             self.private_key = Ed25519PrivateKey.generate()
-            os.makedirs(os.path.dirname(key_path), exist_ok=True)
             with open(key_path, "wb") as f:
                 f.write(self.private_key.private_bytes(
                     encoding=serialization.Encoding.PEM,
