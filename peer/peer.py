@@ -25,7 +25,6 @@ class Peer:
         self.broadcast.start_service()
         self.discovery.start_service()
         threading.Thread(target=self.listen_for_auth_connections, daemon=True).start()
-        
         self.run_cli()
 
     def run_cli(self):  
@@ -71,17 +70,16 @@ class Peer:
 
     def handle_auth_req(self, conn, addr):
         try:
-            authenticated, peer_pub_key = auth_request(conn, self.identity)
+            authenticated, peer_pub_key, shared_key = auth_request(conn, self.identity)
             if authenticated:
                 print(f"[✓] Authenticated peer from {addr}")
                 self.authenticated_peers[addr] = peer_pub_key
             else:
                 print(f"[✗] Failed to authenticate peer from {addr}")
-            conn.close()
         except Exception as e:
             print(f"[!] Error during auth with {addr}: {e}")
-        conn.close()
-
+        finally:
+            conn.close()
 
     def initiate_authentication(self, peer):
         try:
@@ -91,10 +89,14 @@ class Peer:
             return
         try:
             sock = socket.create_connection((ip, port))
-            authenticated, peer_public_key = auth_init(sock, self.identity)
+            authenticated, peer_public_key, shared_key = auth_init(sock, self.identity)
+            if authenticated:
+                print(f"[✓] Authenticated {peer} at {ip}:{port}")
+                self.authenticated_peers[(ip, port)] = peer_public_key
+            else:
+                print(f"[✗] Failed to authenticate {peer}")
         except (ConnectionRefusedError, TimeoutError) as e:
             print(f"Could not connect to {peer} at {ip}:{port} — {e}")
         finally:
             if 'sock' in locals():
                 sock.close()
-
