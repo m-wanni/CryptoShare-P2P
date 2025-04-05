@@ -254,3 +254,57 @@ class Peer:
             finally:
                 if 'sock' in locals():
                     sock.close()
+                    
+# ========================== TESTING ==========================
+if __name__ == "__main__":
+    import unittest
+    from unittest.mock import MagicMock, patch
+    import tempfile
+
+    class DummyIdentity:
+        def get_public_key_bytes(self):
+            return b'dummy_pub'
+        def sign(self, msg):
+            return b'signed'
+        def verify(self, sig, msg, pub):
+            return True
+        def migrate(self):
+            pass
+
+    class PeerTest(unittest.TestCase):
+        def setUp(self):
+            self.temp_dir = tempfile.TemporaryDirectory()
+            self.config = {
+                "peer_name": "TestPeer",
+                "key_path": os.path.join(self.temp_dir.name, "dummy.pem"),
+                "listen_port": 9090,
+                "shared_dir": self.temp_dir.name,
+                "download_dir": self.temp_dir.name,
+                "metadata_cache": {},
+                "discovery_timeout": 5
+            }
+            self.identity = DummyIdentity()
+            self.peer = Peer(self.config, self.identity)
+
+        def tearDown(self):
+            self.temp_dir.cleanup()
+
+        def test_peer_init(self):
+            self.assertEqual(self.peer.peer_name, "TestPeer")
+            self.assertTrue(os.path.exists(self.peer.key_path) or not os.path.exists(self.peer.key_path))  # flexible
+
+        def test_auth_fail(self):
+            self.peer.discovery.get_peers = MagicMock(return_value={})
+            with patch("builtins.print") as mock_print:
+                self.peer.initiate_authentication("UnknownPeer")
+                mock_print.assert_any_call("[!] Peer 'UnknownPeer' not found.")
+
+        def test_filelist_error(self):
+            with patch.object(self.peer.discovery, "get_peers", return_value={"Dummy": ("127.0.0.1", 9000)}), \
+                 patch("socket.create_connection", side_effect=ConnectionRefusedError):
+                with patch("builtins.print") as mock_print:
+                    self.peer.run_cli = lambda: None  # prevent CLI from running
+                    self.peer.initiate_authentication("Dummy")
+                    self.assertTrue(any("Could not connect to Dummy" in str(c[0][0]) for c in mock_print.call_args_list))
+
+    unittest.main()

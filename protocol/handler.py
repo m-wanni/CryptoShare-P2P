@@ -26,12 +26,11 @@ class AuthHandler:
         self.identity = identity
         
     def auth_init(self, sock):
-        """Initiator side authentication - fixed version"""
         logger.debug("Starting auth_init (initiator side)")
         sock.settimeout(10.0)
     
         try:
-            # Step 1: Identity verification phase
+            # Identity verification phase
             a_pubKey = self.identity.get_public_key_bytes()
             a_challenge = secrets.token_bytes(32)
             logger.debug("Sending AUTH_REQ with public key and challenge")
@@ -41,7 +40,7 @@ class AuthHandler:
                 "challenge": base64.b64encode(a_challenge).decode()
             })
         
-            # Step 2: Wait for responder's verification
+            # Wait for responder's verification
             logger.debug("Waiting for AUTH_RESP")
             response = recv_json(sock)
             logger.debug(f"Received AUTH_RESP: {response}")
@@ -58,7 +57,7 @@ class AuthHandler:
                 logger.error("Failed to verify peer signature in auth_init")
                 return False, None, None
             
-            # Step 3: Send our challenge response
+            # Send challenge response
             my_signed_peer_challenge = self.identity.sign(b_challenge)
             logger.debug("Sending CHALLENGE_RESPONSE")
             send_json(sock, {
@@ -66,7 +65,7 @@ class AuthHandler:
                 "signed_challenge": base64.b64encode(my_signed_peer_challenge).decode()
             })
             
-            # Step 4: Now initiate DHKE separately (send our ephemeral public key)
+            # initiate DHKE 
             private_key = X25519PrivateKey.generate()
             ephemeral_public_key = private_key.public_key()
             ephemeral_public_bytes = ephemeral_public_key.public_bytes(
@@ -80,7 +79,7 @@ class AuthHandler:
                 "public_key": base64.b64encode(ephemeral_public_bytes).decode()
             })
             
-            # Step 5: Wait for DHKE response
+            # Wait for DHKE response
             logger.debug("Waiting for DHKE_RESP")
             dhke_response = recv_json(sock)
             logger.debug(f"Received DHKE_RESP: {dhke_response}")
@@ -88,7 +87,7 @@ class AuthHandler:
                 logger.error(f"Expected DHKE_RESP, got {dhke_response.get('type')}")
                 return False, None, None
             
-            # Step 6: Complete DHKE
+            # Complete DHKE
             peer_ephemeral_bytes = base64.b64decode(dhke_response["public_key"])
             peer_ephemeral_key = X25519PublicKey.from_public_bytes(peer_ephemeral_bytes)
             shared_key = private_key.exchange(peer_ephemeral_key)
@@ -107,12 +106,10 @@ class AuthHandler:
             return False, None, None
 
     def auth_request(self, sock, auth_req_msg=None):
-        """Responder side authentication - fixed version"""
         logger.debug("Starting auth_request (responder side)")
         sock.settimeout(10.0)
         
         try:
-            # Step 1: Process the AUTH_REQ (either passed in or wait for it)
             if auth_req_msg:
                 request = auth_req_msg
                 logger.debug(f"Using already received AUTH_REQ: {request}")
@@ -125,11 +122,10 @@ class AuthHandler:
                 logger.error(f"Expected AUTH_REQ, got {request.get('type')}")
                 return False, None, None
             
-            # Extract initiator's details and continue with the rest of the method...
             peer_pub_key = base64.b64decode(request["public_key"])
             peer_challenge = base64.b64decode(request["challenge"])
             
-            # Step 2: Send our response with signed challenge and our own challenge
+            #Send response with signed challenge and our own challenge
             my_pub_key = self.identity.get_public_key_bytes()
             signed_peer_challenge = self.identity.sign(peer_challenge)
             my_challenge = secrets.token_bytes(32)
@@ -142,7 +138,7 @@ class AuthHandler:
                 "challenge": base64.b64encode(my_challenge).decode()
             })
             
-            # Step 3: Wait for the initiator's challenge response
+            #Wait for the initiator's challenge response
             logger.debug("Waiting for CHALLENGE_RESPONSE")
             challenge_resp = recv_json(sock)
             logger.debug(f"Received CHALLENGE_RESPONSE: {challenge_resp}")
@@ -156,7 +152,7 @@ class AuthHandler:
                 logger.error("Failed to verify initiator's signature")
                 return False, None, None
             
-            # Step 4: Wait for DHKE initiation
+            #Wait for DHKE initiation
             logger.debug("Waiting for DHKE_INIT")
             dhke_init = recv_json(sock)
             logger.debug(f"Received DHKE_INIT: {dhke_init}")
@@ -164,7 +160,7 @@ class AuthHandler:
                 logger.error(f"Expected DHKE_INIT, got {dhke_init.get('type')}")
                 return False, None, None
             
-            # Step 5: Process DHKE and send our ephemeral key
+            # Process DHKE and send our ephemeral key
             peer_ephemeral_bytes = base64.b64decode(dhke_init["public_key"])
             peer_ephemeral_key = X25519PublicKey.from_public_bytes(peer_ephemeral_bytes)
             
@@ -182,10 +178,10 @@ class AuthHandler:
                 "public_key": base64.b64encode(my_ephemeral_bytes).decode()
             })
             
-            # Step 6: Complete DHKE
+            #Complete DHKE
             shared_key = my_ephemeral_private.exchange(peer_ephemeral_key)
             
-            # Derive final key using HKDF
+            #Derive final key using HKDF
             shared_key_hash = hashlib.sha256(shared_key).digest()
             logger.debug("Authentication completed successfully")
             
@@ -206,7 +202,6 @@ def handle_incoming_request(sock, addr, identity, peer_obj):
         msg_type = msg.get("type")
         if msg_type == "AUTH_REQ":
             auth_handler = AuthHandler(identity)
-            # IMPORTANT: Pass the already received message to auth_request
             authenticated, peer_pub_key, shared_key = auth_handler.auth_request(sock, msg)
             return {
                 "status": "authenticated" if authenticated else "failed",
