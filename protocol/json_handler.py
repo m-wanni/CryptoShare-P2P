@@ -11,6 +11,7 @@ def recv_json(sock):
     """
     Receive JSON data from a socket (expects newline-delimited JSON).
     """
+    sock.settimeout(10) 
     buffer = b""
     while b'\n' not in buffer:
         chunk = sock.recv(4096)

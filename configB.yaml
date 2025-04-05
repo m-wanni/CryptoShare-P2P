@@ -1,0 +1,7 @@
+peer_name: PeerB
+key_path: data/keys/peerB_key.pem
+listen_port: 9001
+shared_dir: data/sharedB
+download_dir: data/downloadB
+metadata_cache: data/cacheB.yaml
+discovery_timeout: 5

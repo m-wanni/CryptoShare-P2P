@@ -1,0 +1,7 @@
+peer_name: PeerA
+key_path: data/keys/peerA_key.pem
+listen_port: 9000
+shared_dir: data/sharedA
+download_dir: data/downloadA
+metadata_cache: data/cacheA.yaml
+discovery_timeout: 5
